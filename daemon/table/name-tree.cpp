@@ -202,7 +202,9 @@ NameTree::findLongestPrefixMatch<strategy_choice::Entry>(const strategy_choice::
 Entry*
 NameTree::findLongestPrefixMatch(const pit::Entry& pitEntry, const EntrySelector& entrySelector) const
 {
+  //std::cout << "pitEntry = " << pitEntry.getName() << std::endl;
   const Entry* nte = this->getEntry(pitEntry);
+  if (nte == nullptr) std::cout << "Bug Here! node = " << m_geoTag << std::endl;
   BOOST_ASSERT(nte != nullptr);
 
   if (nte->getName().size() < pitEntry.getName().size()) {

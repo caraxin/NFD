@@ -63,6 +63,9 @@ public:
   void
   update(const Interest& interest);
 
+  void 
+  update(const Interest& interest, const uint64_t& t_vsync);
+
 private:
   Face& m_face;
   uint32_t m_lastNonce;

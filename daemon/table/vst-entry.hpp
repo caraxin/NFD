@@ -23,29 +23,69 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "pit-in-record.hpp"
+#ifndef NFD_DAEMON_TABLE_VST_ENTRY_HPP
+#define NFD_DAEMON_TABLE_VST_ENTRY_HPP
+
+#include "face/face.hpp"
+#include "core/common.hpp"
+#include "core/scheduler.hpp"
 
 namespace nfd {
-namespace pit {
+namespace vst {
 
-InRecord::InRecord(Face& face)
-  : FaceRecord(face)
+class Entry : public noncopyable
 {
-}
+public:
+  explicit
+  Entry(const Interest& interest): m_interest(interest.shared_from_this()) {
+  }
 
-void
-InRecord::update(const Interest& interest)
-{
-  this->FaceRecord::update(interest);
-  m_interest = const_cast<Interest&>(interest).shared_from_this();
-}
+  /** \return the representative Interest of the SIT entry
+   */
+  const Interest&
+  getInterest() const
+  {
+    return *m_interest;
+  }
 
-void
-InRecord::update(const Interest& interest, const uint64_t& t_vsync)
-{
-	this->FaceRecord::update(interest, t_vsync);
-	m_interest = const_cast<Interest&>(interest).shared_from_this();
-}
+  /** \return Interest Name
+   */
+  const Name&
+  getName() const
+  {
+    return m_interest->getName();
+  }
+
+  bool
+  canMatch(const Interest& interest) const 
+  {
+    return m_interest->getName().compare(0, Name::npos,
+                                         interest.getName(), 0, Name::npos) == 0;
+  }
+
+  void
+  setSatisfied()
+  {
+  	is_satisfied = true;
+  }
+
+  bool
+  isSatisfied() const 
+  {
+  	return is_satisfied;
+  }
+
+public:
+  /** \brief scheduled interest timer
+   */
+  scheduler::EventId m_scheduleInterestTimer;
+
+private:
+  shared_ptr<const Interest> m_interest;
+  bool is_satisfied = false;
+};
 
 } // namespace pit
 } // namespace nfd
+
+#endif // NFD_DAEMON_TABLE_PIT_ENTRY_HPP

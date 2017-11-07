@@ -23,29 +23,70 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "pit-in-record.hpp"
+#ifndef NFD_DAEMON_TABLE_SD_ENTRY_HPP
+#define NFD_DAEMON_TABLE_SD_ENTRY_HPP
+
+#include "face/face.hpp"
+#include "core/common.hpp"
+#include "core/scheduler.hpp"
 
 namespace nfd {
-namespace pit {
+namespace sd {
 
-InRecord::InRecord(Face& face)
-  : FaceRecord(face)
+class Entry : public noncopyable
 {
-}
+public:
+  explicit
+  Entry(const Data& data): m_data(data.shared_from_this()) {
+  }
 
-void
-InRecord::update(const Interest& interest)
-{
-  this->FaceRecord::update(interest);
-  m_interest = const_cast<Interest&>(interest).shared_from_this();
-}
+  /** \return the representative data of the SD entry
+   */
+  const Data&
+  getData() const
+  {
+    return *m_data;
+  }
 
-void
-InRecord::update(const Interest& interest, const uint64_t& t_vsync)
-{
-	this->FaceRecord::update(interest, t_vsync);
-	m_interest = const_cast<Interest&>(interest).shared_from_this();
-}
+  /** \return Data Name
+   */
+  const Name&
+  getName() const
+  {
+    return m_data->getName();
+  }
+
+  bool
+  canMatch(const Data& data) const 
+  {
+    return m_data->getName().compare(0, Name::npos,
+                                         data.getName(), 0, Name::npos) == 0;
+  }
+
+  void 
+  setTimeOut() 
+  {
+    timeout = true;
+  }
+
+  bool
+  isTimeOut() const
+  {
+    return timeout;
+  }
+
+
+public:
+  /** \brief scheduled data timer
+   */
+  scheduler::EventId m_scheduleDataTimer;
+
+private:
+  shared_ptr<const Data> m_data;
+  bool timeout = false;
+};
 
 } // namespace pit
 } // namespace nfd
+
+#endif // NFD_DAEMON_TABLE_PIT_ENTRY_HPP

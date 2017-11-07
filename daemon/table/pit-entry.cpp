@@ -70,6 +70,23 @@ Entry::insertOrUpdateInRecord(Face& face, const Interest& interest)
   return it;
 }
 
+InRecordCollection::iterator
+Entry::insertOrUpdateInRecord(Face& face, const Interest& interest, 
+                              const uint64_t& t_vsync)
+{
+  BOOST_ASSERT(this->canMatch(interest));
+
+  auto it = std::find_if(m_inRecords.begin(), m_inRecords.end(),
+    [&face] (const InRecord& inRecord) { return &inRecord.getFace() == &face; });
+  if (it == m_inRecords.end()) {
+    m_inRecords.emplace_front(face);
+    it = m_inRecords.begin();
+  }
+
+  it->update(interest, t_vsync);
+  return it;
+}
+
 void
 Entry::deleteInRecord(const Face& face)
 {

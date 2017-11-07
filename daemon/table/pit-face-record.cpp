@@ -49,6 +49,19 @@ FaceRecord::update(const Interest& interest)
   m_expiry = m_lastRenewed + lifetime;
 }
 
+void 
+FaceRecord::update(const Interest& interest, const uint64_t& t_vsync)
+{
+  m_lastNonce = interest.getNonce();
+  m_lastRenewed = time::steady_clock::now();
+
+  time::milliseconds lifetime = interest.getInterestLifetime();
+  if (lifetime < time::milliseconds::zero()) {
+    lifetime = ndn::DEFAULT_INTEREST_LIFETIME;
+  }
+  m_expiry = m_lastRenewed + lifetime + time::milliseconds(t_vsync);
+}
+
 
 } // namespace pit
 } // namespace nfd

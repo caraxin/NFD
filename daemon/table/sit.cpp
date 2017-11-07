@@ -23,29 +23,49 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "pit-in-record.hpp"
+#include "sit.hpp"
 
 namespace nfd {
-namespace pit {
+namespace sit {
 
-InRecord::InRecord(Face& face)
-  : FaceRecord(face)
+shared_ptr<Entry>
+Sit::find(const Interest& interest) const
 {
+  auto it = std::find_if(m_sitEntries.begin(), m_sitEntries.end(),
+      [&interest] (const shared_ptr<Entry>& entry) {
+        return entry->canMatch(interest);
+      });
+  if (it == m_sitEntries.end()) return nullptr;
+  return *it;
 }
 
-void
-InRecord::update(const Interest& interest)
+shared_ptr<Entry>
+Sit::insert(const Interest& interest)
 {
-  this->FaceRecord::update(interest);
-  m_interest = const_cast<Interest&>(interest).shared_from_this();
+  auto it = std::find_if(m_sitEntries.begin(), m_sitEntries.end(),
+      [&interest] (const shared_ptr<Entry>& entry) {
+        return entry->canMatch(interest);
+      });
+  BOOST_ASSERT(it == m_sitEntries.end());
+
+  auto entry = make_shared<Entry>(interest);
+  m_sitEntries.push_back(entry);
+  ++m_nItems;
+  return entry;
 }
 
-void
-InRecord::update(const Interest& interest, const uint64_t& t_vsync)
+void 
+Sit::erase(Entry* entry) 
 {
-	this->FaceRecord::update(interest, t_vsync);
-	m_interest = const_cast<Interest&>(interest).shared_from_this();
+  BOOST_ASSERT(entry != nullptr);
+  auto it = std::find_if(m_sitEntries.begin(), m_sitEntries.end(),
+    [entry] (const shared_ptr<Entry>& sitEntry2) { return sitEntry2.get() == entry; });
+  BOOST_ASSERT(it != m_sitEntries.end());
+
+  *it = m_sitEntries.back();
+  m_sitEntries.pop_back();
+  --m_nItems;
 }
 
-} // namespace pit
+} // namespace sit
 } // namespace nfd

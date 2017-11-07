@@ -25,9 +25,12 @@
 
 #include "best-route-strategy.hpp"
 #include "algorithm.hpp"
+#include "core/logger.hpp"
 
 namespace nfd {
 namespace fw {
+
+NFD_LOG_INIT("BestRouteStrategy");
 
 const Name BestRouteStrategy::STRATEGY_NAME("ndn:/localhost/nfd/strategy/best-route/%FD%01");
 NFD_REGISTER_STRATEGY(BestRouteStrategy);
@@ -53,6 +56,7 @@ BestRouteStrategy::afterReceiveInterest(const Face& inFace, const Interest& inte
     Face& outFace = it->getFace();
     if (!wouldViolateScope(inFace, interest, outFace) &&
         canForwardToLegacy(*pitEntry, outFace)) {
+      NFD_LOG_DEBUG("send interest!");
       this->sendInterest(pitEntry, outFace, interest);
       return;
     }

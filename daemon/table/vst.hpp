@@ -23,29 +23,52 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "pit-in-record.hpp"
+#ifndef NFD_DAEMON_TABLE_VST_HPP
+#define NFD_DAEMON_TABLE_VST_HPP
+
+#include "vst-entry.hpp"
 
 namespace nfd {
-namespace pit {
+namespace vst {
 
-InRecord::InRecord(Face& face)
-  : FaceRecord(face)
+/** \brief represents the Interest Table
+ */
+class Vst : noncopyable
 {
-}
+public:
+  Vst()
+  {
+    m_nItems = 0;
+  }
 
-void
-InRecord::update(const Interest& interest)
-{
-  this->FaceRecord::update(interest);
-  m_interest = const_cast<Interest&>(interest).shared_from_this();
-}
+  /** \return number of entries
+   */
+  size_t
+  size() const
+  {
+    return m_nItems;
+  }
 
-void
-InRecord::update(const Interest& interest, const uint64_t& t_vsync)
-{
-	this->FaceRecord::update(interest, t_vsync);
-	m_interest = const_cast<Interest&>(interest).shared_from_this();
-}
+  shared_ptr<Entry>
+  find(const Interest& interest) const;
 
-} // namespace pit
+  shared_ptr<Entry>
+  insert(const Interest& interest);
+
+  /** \brief deletes an entry
+   */
+  void
+  erase(Entry* entry);
+
+private:
+  std::vector<shared_ptr<vst::Entry>> m_vstEntries;
+  size_t m_nItems;
+};
+
+} // namespace vst
+
+using vst::Vst;
+
 } // namespace nfd
+
+#endif // NFD_DAEMON_TABLE_VST_HPP

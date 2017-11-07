@@ -72,6 +72,7 @@ LinkService::sendData(const Data& data)
 
   ++this->nOutData;
 
+  //std::cout << "send data from link-service!" << std::endl;
   doSendData(data);
 
   afterSendData(data);

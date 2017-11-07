@@ -142,6 +142,9 @@ public: // in-record
   InRecordCollection::iterator
   insertOrUpdateInRecord(Face& face, const Interest& interest);
 
+  InRecordCollection::iterator
+  insertOrUpdateInRecord(Face& face, const Interest& interest, const uint64_t& t_vsync);
+
   /** \brief delete the in-record for \p face if it exists
    */
   void

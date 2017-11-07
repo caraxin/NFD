@@ -34,6 +34,9 @@
 #include "table/fib.hpp"
 #include "table/pit.hpp"
 #include "table/cs.hpp"
+#include "table/sit.hpp"
+#include "table/sd.hpp"
+#include "table/vst.hpp"
 #include "table/measurements.hpp"
 #include "table/strategy-choice.hpp"
 #include "table/dead-nonce-list.hpp"
@@ -105,6 +108,20 @@ public: // faces and policies
     m_unsolicitedDataPolicy = std::move(policy);
   }
 
+  void setGeoTag(uint32_t m_geoTag_)
+  {
+    m_geoTag = m_geoTag_;
+    m_nameTree.setGeoTag(m_geoTag_);
+  }
+
+  void setInfoNum(double m_infoNum) {
+    infoNum = m_infoNum;
+  }
+
+  scheduler::EventId m_sleepTimer;
+  scheduler::EventId m_timelineTimer;
+  scheduler::EventId m_sleepSignalTimer;
+
 public: // forwarding entrypoints and tables
   /** \brief start incoming Interest processing
    *  \param face face on which Interest is received
@@ -175,6 +192,17 @@ public: // forwarding entrypoints and tables
     return m_networkRegionTable;
   }
 
+  /*
+  void 
+  setTimelineStart(const time::steady_clock::TimePoint& timelineStart) 
+  {
+    m_timelineStart = timelineStart;
+  }
+  */
+
+  void
+  timelineStart(const time::steady_clock::TimePoint& timelineStart);
+
 public: // allow enabling ndnSIM content store (will be removed in the future)
   void
   setCsFromNdnSim(ns3::Ptr<ns3::ndn::ContentStore> cs)
@@ -208,6 +236,11 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // pipelines
   */
   VIRTUAL_WITH_TESTS void
   onContentStoreMiss(const Face& inFace, const shared_ptr<pit::Entry>& pitEntry, const Interest& interest);
+
+  VIRTUAL_WITH_TESTS void
+  onVstSchedulerTimeout(const Face& inFace, const shared_ptr<pit::Entry>& pitEntry,
+                        const shared_ptr<vst::Entry>& vstEntry, const Interest& interest,
+                        std::set<Face*> pendingUpstreams);
 
   /** \brief Content Store hit pipeline
   */
@@ -263,6 +296,59 @@ PUBLIC_WITH_TESTS_ELSE_PRIVATE: // pipelines
   VIRTUAL_WITH_TESTS void
   onOutgoingNack(const shared_ptr<pit::Entry>& pitEntry, const Face& outFace, const lp::NackHeader& nack);
 
+  /*geo-forwarding pipelines*/
+  VIRTUAL_WITH_TESTS void 
+  geoOnInterestFinalize(const shared_ptr<pit::Entry>& pitEntry);
+
+  VIRTUAL_WITH_TESTS void
+  onIncomingGeoInterest(Face& inFace, Interest& interest);
+
+  VIRTUAL_WITH_TESTS void
+  onGeoContentStoreMiss(Face& inFace, const shared_ptr<pit::Entry>& pitEntry,
+                        const Interest& interest_, Interest& interest);
+
+  VIRTUAL_WITH_TESTS void
+  setSitSchedulerTimer(const Face& inFace, Interest& interest, 
+                       const shared_ptr<pit::Entry>& pitEntry);
+
+  VIRTUAL_WITH_TESTS void
+  onSitSchedulerTimeout(const Face& inFace, const shared_ptr<sit::Entry>& sitEntry,
+                        Interest& interest, const shared_ptr<pit::Entry>& pitEntry);
+
+  VIRTUAL_WITH_TESTS void
+  onGeoContentStoreHit(const Face& inface, const shared_ptr<pit::Entry>& pitEntry,
+                       const Interest& interest_, const Data& data, Interest& interest);
+
+  VIRTUAL_WITH_TESTS void
+  onSdSchedulerTimeout(const Face& inface, const Data& data,
+                       const shared_ptr<sd::Entry>& sdEntry,
+                       const shared_ptr<pit::Entry>& pitEntry);
+
+  VIRTUAL_WITH_TESTS void
+  onIncomingGeoData(Face& inFace, const Data& data);
+
+  VIRTUAL_WITH_TESTS void
+  onSdSchedulerTimeout2(Face& inFace, const Data& data,
+                        shared_ptr<sd::Entry>& sdEntry, pit::DataMatchResult& pitMatches);
+
+  VIRTUAL_WITH_TESTS void
+  onIncomingSleepSignal(Face& inFace, const Interest& interest);
+
+  VIRTUAL_WITH_TESTS void
+  timelineSchedule();
+
+  VIRTUAL_WITH_TESTS void
+  setSleepSignalTimer();
+
+  VIRTUAL_WITH_TESTS void
+  sendSleepSignal();
+
+  VIRTUAL_WITH_TESTS void
+  setSleepTimer();
+
+  VIRTUAL_WITH_TESTS void 
+  wakeUp();
+
 PROTECTED_WITH_TESTS_ELSE_PRIVATE:
   VIRTUAL_WITH_TESTS void
   setUnsatisfyTimer(const shared_ptr<pit::Entry>& pitEntry);
@@ -281,6 +367,10 @@ PROTECTED_WITH_TESTS_ELSE_PRIVATE:
   VIRTUAL_WITH_TESTS void
   insertDeadNonceList(pit::Entry& pitEntry, bool isSatisfied,
                       time::milliseconds dataFreshnessPeriod, Face* upstream);
+
+  VIRTUAL_WITH_TESTS void
+  geoInsertDeadNonceList(pit::Entry& pitEntry);
+
 
   /** \brief call trigger (method) on the effective strategy of pitEntry
    */
@@ -311,6 +401,19 @@ private:
   DeadNonceList      m_deadNonceList;
   NetworkRegionTable m_networkRegionTable;
   shared_ptr<Face>   m_csFace;
+  Sit                m_sit;
+  Sd                 m_sd;
+  Vst                m_vst;
+
+  uint32_t           m_geoTag;
+  //time::steady_clock::TimePoint m_timelineStart;
+  size_t             m_otherTimeOut = 0;
+  bool               m_sleepSignalTimeOut;
+  bool               m_disableSleep;
+  bool               is_sleeping;
+  size_t             m_cancelSit = 0;
+
+  double             infoNum = 0;
 
   ns3::Ptr<ns3::ndn::ContentStore> m_csFromNdnSim;
 

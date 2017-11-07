@@ -243,8 +243,14 @@ public: // enumeration
     return Iterator();
   }
 
+  void setGeoTag(uint32_t geo_tag) {
+    m_geoTag = geo_tag;
+  }
+
 private:
   Hashtable m_ht;
+
+  uint32_t m_geoTag;
 
   friend class EnumerationImpl;
 };

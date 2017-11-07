@@ -25,9 +25,12 @@
 
 #include "multicast-strategy.hpp"
 #include "algorithm.hpp"
+#include "core/logger.hpp"
 
 namespace nfd {
 namespace fw {
+
+NFD_LOG_INIT("MulticastStrategy");
 
 const Name MulticastStrategy::STRATEGY_NAME("ndn:/localhost/nfd/strategy/multicast/%FD%01");
 NFD_REGISTER_STRATEGY(MulticastStrategy);
@@ -46,8 +49,10 @@ MulticastStrategy::afterReceiveInterest(const Face& inFace, const Interest& inte
 
   for (fib::NextHopList::const_iterator it = nexthops.begin(); it != nexthops.end(); ++it) {
     Face& outFace = it->getFace();
+    NFD_LOG_DEBUG("candidate outFace=" << outFace.getId());
     if (!wouldViolateScope(inFace, interest, outFace) &&
         canForwardToLegacy(*pitEntry, outFace)) {
+      NFD_LOG_DEBUG("send interest from inFace=" << inFace.getId() << " to outFace=" << outFace.getId());
       this->sendInterest(pitEntry, outFace, interest);
     }
   }

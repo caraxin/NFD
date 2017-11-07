@@ -23,29 +23,52 @@
  * NFD, e.g., in COPYING.md file.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "pit-in-record.hpp"
+#ifndef NFD_DAEMON_TABLE_SD_HPP
+#define NFD_DAEMON_TABLE_SD_HPP
+
+#include "sd-entry.hpp"
 
 namespace nfd {
-namespace pit {
+namespace sd {
 
-InRecord::InRecord(Face& face)
-  : FaceRecord(face)
+/** \brief represents the Interest Table
+ */
+class Sd : noncopyable
 {
-}
+public:
+  Sd()
+  {
+    m_nItems = 0;
+  }
 
-void
-InRecord::update(const Interest& interest)
-{
-  this->FaceRecord::update(interest);
-  m_interest = const_cast<Interest&>(interest).shared_from_this();
-}
+  /** \return number of entries
+   */
+  size_t
+  size() const
+  {
+    return m_nItems;
+  }
 
-void
-InRecord::update(const Interest& interest, const uint64_t& t_vsync)
-{
-	this->FaceRecord::update(interest, t_vsync);
-	m_interest = const_cast<Interest&>(interest).shared_from_this();
-}
+  shared_ptr<Entry>
+  find(const Data& data) const;
 
-} // namespace pit
+  shared_ptr<Entry>
+  insert(const Data& data);
+
+  /** \brief deletes an entry
+   */
+  void
+  erase(Entry* entry);
+
+private:
+  std::vector<shared_ptr<sd::Entry>> m_sdEntries;
+  size_t m_nItems;
+};
+
+} // namespace sit
+
+using sd::Sd;
+
 } // namespace nfd
+
+#endif // NFD_DAEMON_TABLE_SD_HPP

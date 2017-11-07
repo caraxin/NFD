@@ -42,6 +42,9 @@ public:
   void
   update(const Interest& interest);
 
+  void 
+  update(const Interest& interest, const uint64_t& t_vsync);
+
   const Interest&
   getInterest() const;
 
